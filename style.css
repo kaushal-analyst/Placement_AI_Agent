@@ -1,0 +1,111 @@
+/* TOPS Technologies Theme */
+:root {
+    --primary-color: #1a237e; /* Navy Blue */
+    --secondary-color: #0288d1; /* Sky Blue */
+    --background-color: #ffffff;
+    --text-color: #333333;
+}
+
+/* Global Styles */
+.stApp {
+    background-color: var(--background-color);
+    color: var(--text-color);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Header */
+.custom-header {
+    background-color: white;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 3px solid var(--secondary-color);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.logo-img {
+    height: 50px;
+    margin-right: 15px;
+}
+
+.nav-links {
+    display: flex;
+    gap: 20px;
+}
+
+.nav-link {
+    text-decoration: none;
+    color: var(--text-color);
+    font-weight: 500;
+    font-size: 1rem;
+    transition: color 0.3s;
+}
+
+.nav-link:hover {
+    color: var(--secondary-color);
+}
+
+/* Sidebar */
+section[data-testid="stSidebar"] {
+    background-color: #f5f5f5;
+    border-right: 1px solid #ddd;
+}
+
+/* Stat Cards */
+div[data-testid="metric-container"] {
+    background-color: white;
+    border: 1px solid #e0e0e0;
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    text-align: center;
+}
+
+div[data-testid="metric-container"] label {
+    color: var(--secondary-color);
+    font-weight: bold;
+}
+
+/* Logs Container */
+.log-container {
+    background-color: #1e1e1e;
+    color: #00ff00;
+    font-family: 'Courier New', Courier, monospace;
+    padding: 1rem;
+    border-radius: 5px;
+    height: 200px;
+    overflow-y: auto;
+    margin-top: 20px;
+    border: 1px solid #333;
+}
+
+/* DataFrame/Table */
+div[data-testid="stDataFrame"] {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+/* Buttons */
+.stButton button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.stButton button:hover {
+    background-color: var(--secondary-color);
+}
