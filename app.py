@@ -34,34 +34,28 @@ def get_img_as_base64(file_path):
 
 # --- Header Component ---
 def render_header():
-    logo_html = ""
-    if os.path.exists("logo.png"):
-        img_b64 = get_img_as_base64("logo.png")
-        logo_html = f'<img src="data:image/png;base64,{img_b64}" class="logo-img" alt="TOPS Logo" style="height: 50px;">'
-    else:
-        # Fallback or placeholder if file not found
-        logo_html = '<h1 style="color: #1a237e; margin: 0;">TOPS TECHNOLOGIES</h1>'
-
-    st.markdown(f"""
-        <div class="custom-header" style="justify-content: center;">
-            <div class="logo-container">
-                {logo_html}
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
+    # Attempt to center the logo using columns
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if os.path.exists("TOPS-logo.png"):
+            st.image("TOPS-logo.png", width=300) # Native Streamlit Image
+        else:
+            st.markdown('<h1 style="color: #1a237e; text-align: center;">TOPS TECHNOLOGIES</h1>', unsafe_allow_html=True)
+    
+    st.divider()
 
 # --- Sidebar ---
 with st.sidebar:
-    st.header("Job Application Assistant")
+    st.subheader("Configuration") # Changed header
     
     uploaded_file = st.file_uploader("Upload Resume (PDF)", type=['pdf'])
     
     st.divider()
     
     st.subheader("Credentials")
-    # Pre-filling for demo purposes based on user request, but safely editable
-    email = st.text_input("Email Address", placeholder="Enter your Gmail address") 
-    app_password = st.text_input("Gmail App Password", type="password", help="Use a 16-character App Password from Google Account > Security")
+    # Pre-filling based on user credentials
+    email = st.text_input("Email Address", value="19.why.1991@gmail.com") 
+    app_password = st.text_input("Gmail App Password", type="password", value="xkpp uodp qwzk mnvw", help="Use a 16-character App Password")
     
     # Load API Key from Secrets or Environment
     try:
@@ -69,10 +63,10 @@ with st.sidebar:
     except:
         api_key = os.getenv("GEMINI_API_KEY", "")
         if not api_key:
-            st.error("Gemini API Key not found. Please set it in .streamlit/secrets.toml or Environment Variables.")
+            st.error("Gemini API Key not found. Please set it in .streamlit/secrets.toml")
     
     location = st.text_input("Preferred Location", value="Ahmedabad")
-    manual_role = st.text_input("Target Job Role (Optional)", placeholder="e.g., Python Developer")
+    manual_role = st.text_input("Target Job Role", placeholder="e.g., Python Developer")
 
     st.divider()
     
@@ -80,24 +74,15 @@ with st.sidebar:
 
 # --- Main Dashboard ---
 
-# Initialize session state
+render_header() # Call header function
+
+# Initialize session state (Keep existing)
 if 'stats' not in st.session_state:
     st.session_state['stats'] = {'jobs_found': 0, 'emails_sent': 0, 'skipped': 0}
 if 'logs' not in st.session_state:
     st.session_state['logs'] = []
 if 'results' not in st.session_state:
     st.session_state['results'] = pd.DataFrame(columns=["Company", "Role", "Location", "Status", "AI Reason"])
-
-# Function to update logs
-log_placeholder = st.empty()
-def update_logs(message):
-    timestamp = datetime.now().strftime("%H:%M:%S")
-    st.session_state['logs'].append(f"[{timestamp}] {message}")
-    if len(st.session_state['logs']) > 50:
-            st.session_state['logs'].pop(0)
-    
-    log_html = '<div class="log-container">' + "<br>".join(st.session_state['logs']) + '</div>'
-    log_placeholder.markdown(log_html, unsafe_allow_html=True)
 
 # Stat Cards
 col1, col2, col3 = st.columns(3)
@@ -106,6 +91,7 @@ stat2 = col2.empty()
 stat3 = col3.empty()
 
 def update_stats():
+    # Styled metrics via CSS
     with stat1.container():
         st.metric("Total Jobs Found", st.session_state['stats']['jobs_found'])
     with stat2.container():
@@ -115,22 +101,33 @@ def update_stats():
 
 update_stats()
 
-# Two-column layout for Logs and Results
-row2_col1, row2_col2 = st.columns([1, 2])
+st.divider()
 
-with row2_col1:
-    st.subheader("Agent Live Logs")
-    # Placeholder was defined above logged `log_placeholder`
-    # We need to re-render it if the page reruns
+# Results Section (Now Full Width/Primary)
+st.subheader("📊 Application Results")
+results_placeholder = st.empty()
+results_placeholder.dataframe(st.session_state['results'], use_container_width=True)
+
+st.divider()
+
+# Logs Section (Now at the Bottom)
+st.subheader("🤖 Agent Live Logs")
+log_placeholder = st.empty()
+def update_logs(message):
+    timestamp = datetime.now().strftime("%H:%M:%S")
+    st.session_state['logs'].append(f"[{timestamp}] {message}")
+    if len(st.session_state['logs']) > 50:
+            st.session_state['logs'].pop(0)
+    
+    # Logs render at the bottom
     log_html = '<div class="log-container">' + "<br>".join(st.session_state['logs']) + '</div>'
     log_placeholder.markdown(log_html, unsafe_allow_html=True)
 
-with row2_col2:
-    st.subheader("Application Results")
-    results_placeholder = st.empty()
-    results_placeholder.dataframe(st.session_state['results'], use_container_width=True)
+# Initial render of logs
+update_logs("Ready to start...")
 
-# --- Agent Logic ---
+# --- Agent Logic --- 
+# (Keep existing agent logic, just update indentation/structure if needed, but logic is fine)
 if start_btn:
     if not uploaded_file:
         st.error("Please upload a resume first.")
@@ -205,10 +202,13 @@ if start_btn:
                         update_logs(f"✅ Application Sent to {company}")
                         st.session_state['stats']['emails_sent'] += 1
                         status_text = "Sent"
+                        ai_reason = "Matched & Applied"
                     else:
                         update_logs(f"❌ Failed to send to {company}")
                         st.session_state['stats']['skipped'] += 1
                         status_text = "Failed"
+                        ai_reason = f"Email Error: {email_msg[:20]}..." if email_msg else "Connection Failed"
+
                         if "BadCredentials" in email_msg or "Username and Password not accepted" in email_msg:
                              st.error("Authentication Failed: Please check your Gmail App Password. It is NOT your regular login password. Ensure 2-Step Verification is ON and generate a specific App Password.")
                     
@@ -220,7 +220,7 @@ if start_btn:
                         "Role": job['role'],
                         "Location": location,
                         "Status": status_text,
-                        "AI Reason": "Matched Skills"
+                        "AI Reason": ai_reason
                     }
                     st.session_state['results'] = pd.concat([st.session_state['results'], pd.DataFrame([new_row])], ignore_index=True)
                     results_placeholder.dataframe(st.session_state['results'], use_container_width=True)
