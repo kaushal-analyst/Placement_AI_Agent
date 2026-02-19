@@ -60,9 +60,16 @@ with st.sidebar:
     
     st.subheader("Credentials")
     # Pre-filling for demo purposes based on user request, but safely editable
-    email = st.text_input("Email Address", value="19.why.1991@gmail.com") 
-    app_password = st.text_input("Gmail App Password", type="password", value="xkpp uodp qwzk mnvw")
-    api_key = st.text_input("Gemini API Key", type="password", value="AIzaSyDKZAhVP3Gdgm2nnwiOhEjH1jI15KyzV70")
+    email = st.text_input("Email Address", placeholder="Enter your Gmail address") 
+    app_password = st.text_input("Gmail App Password", type="password", help="Use a 16-character App Password from Google Account > Security")
+    
+    # Load API Key from Secrets or Environment
+    try:
+        api_key = st.secrets["GEMINI_API_KEY"]
+    except:
+        api_key = os.getenv("GEMINI_API_KEY", "")
+        if not api_key:
+            st.error("Gemini API Key not found. Please set it in .streamlit/secrets.toml or Environment Variables.")
     
     location = st.text_input("Preferred Location", value="Ahmedabad")
     manual_role = st.text_input("Target Job Role (Optional)", placeholder="e.g., Python Developer")
