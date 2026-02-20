@@ -46,18 +46,17 @@ def render_header():
 
 # --- Sidebar ---
 with st.sidebar:
-    st.subheader("Configuration") # Changed header
+    st.subheader("Configuration")
     
     uploaded_file = st.file_uploader("Upload Resume (PDF)", type=['pdf'])
     
     st.divider()
     
     st.subheader("Credentials")
-    # Pre-filling based on user credentials
     email = st.text_input("Email Address", value="19.why.1991@gmail.com") 
     app_password = st.text_input("Gmail App Password", type="password", value="xkpp uodp qwzk mnvw", help="Use a 16-character App Password")
     
-    # Load API Key from Secrets or Environment
+    # Load Gemini API Key
     try:
         api_key = st.secrets["GEMINI_API_KEY"]
     except:
@@ -65,8 +64,25 @@ with st.sidebar:
         if not api_key:
             st.error("Gemini API Key not found. Please set it in .streamlit/secrets.toml")
     
+    # Load RapidAPI Key
+    try:
+        default_rapidapi = st.secrets["RAPIDAPI_KEY"]
+    except:
+        default_rapidapi = os.getenv("RAPIDAPI_KEY", "")
+
+    st.divider()
+    st.subheader("Job Search")
     location = st.text_input("Preferred Location", value="Ahmedabad")
     manual_role = st.text_input("Target Job Role", placeholder="e.g., Python Developer")
+    
+    # RapidAPI Key for JSearch (real job scraping)
+    rapidapi_key = st.text_input(
+        "RapidAPI Key (for Real Jobs)",
+        type="password",
+        value=default_rapidapi,
+        placeholder="Paste your RapidAPI key here",
+        help="Get a FREE key at rapidapi.com → Search 'JSearch'. Without this, simulation mode will be used."
+    )
 
     st.divider()
     
@@ -164,14 +180,20 @@ if start_btn:
                 update_logs(f"Target Role: {role}")
                 update_logs(f"Skills: {', '.join(skills[:3])}...")
                 
-                # 2. Find Jobs
+                # 2. Find Jobs (Real scraping via JSearch or fallback simulation)
                 update_logs(f"Searching for {role} jobs in {location}...")
-                found_jobs = agents.simulate_job_discovery(role, location)
+                found_jobs, job_source = agents.discover_jobs(role, location, rapidapi_key)
+                
+                if job_source == "real":
+                    update_logs(f"✅ Found {len(found_jobs)} real jobs via JSearch API!")
+                else:
+                    update_logs(f"⚠️ Using simulation mode (no RapidAPI key). Found {len(found_jobs)} simulated jobs.")
+                
                 st.session_state['stats']['jobs_found'] += len(found_jobs)
                 update_stats()
                 
                 if not found_jobs:
-                    update_logs("No jobs found via simulation.")
+                    update_logs("No jobs found. Check your RapidAPI key or try a different role/location.")
                 
                 for job in found_jobs:
                     company = job['company']
@@ -227,12 +249,13 @@ if start_btn:
                     
                     time.sleep(20) # Increased delay to 20s to avoid rate limits
                 
-                # 5. Interview Prep
-                update_logs("Generating interview preparation questions...")
-                questions = agents.generate_interview_questions(role, api_key)
+                # 5. Interview Prep (based on actual job descriptions + resume)
+                update_logs("Generating personalized interview questions based on your resume & jobs applied...")
+                questions = agents.generate_interview_questions(role, resume_text, found_jobs, api_key)
                 
                 st.success("Job Hunt Cycle Complete!")
-                st.markdown("### 🎯 Interview Preparation")
+                st.markdown("### 🎯 Personalized Interview Preparation")
+                st.info("These questions are tailored to the specific companies and job descriptions you applied to.")
                 st.markdown(questions)
 
         except Exception as e:
